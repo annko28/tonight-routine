@@ -1,0 +1,15 @@
+{
+  "name": "Tonight's Routine",
+  "short_name": "Routine",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#e6fff8",
+  "theme_color": "#00a98f",
+  "icons": [
+    {
+      "src": "./bear-stamp.png",
+      "sizes": "204x192",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#00a98f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Tonight's Routine">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="./bear-stamp.png">
+    <title>Tonight's Routine</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --emerald: #00a98f;
+        --emerald-deep: #007f70;
+        --mint: #d7fff5;
+        --ink: #11312f;
+        --muted: #5b7370;
+        --line: rgba(0, 127, 112, .18);
+        --paper: rgba(255, 255, 255, .86);
+        --shadow: 0 18px 45px rgba(0, 95, 83, .18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Helvetica Neue", -apple-system, BlinkMacSystemFont, sans-serif;
+        background:
+          radial-gradient(circle at 20% 10%, rgba(255, 236, 184, .85), transparent 26rem),
+          linear-gradient(145deg, #e6fff8 0%, #f9fffd 46%, #c9f7ef 100%);
+        color: var(--ink);
+        letter-spacing: 0;
+      }
+
+      button,
+      label {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .app-shell {
+        width: min(100%, 460px);
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: max(18px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+      }
+
+      .hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 4px 18px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 280px;
+        font-family: Optima, "Avenir Next", "Helvetica Neue", sans-serif;
+        font-size: 31px;
+        line-height: .98;
+        font-weight: 600;
+      }
+
+      .today-label {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .hero-bear {
+        width: 96px;
+        height: 96px;
+        object-fit: contain;
+      }
+
+      .task-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .task-button,
+      .calendar-panel,
+      .vault-panel {
+        border: 1px solid var(--line);
+        background: var(--paper);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .task-button {
+        position: relative;
+        min-height: 76px;
+        border-radius: 8px;
+        padding: 15px 42px 15px 16px;
+        color: var(--ink);
+        text-align: left;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        overflow: hidden;
+        transition: transform .18s ease, border-color .18s ease, background .18s ease;
+      }
+
+      .task-button::after {
+        content: "";
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        width: 18px;
+        height: 18px;
+        border: 1px solid rgba(0, 127, 112, .42);
+        border-radius: 50%;
+        transform: translateY(-50%);
+      }
+
+      .task-button::before {
+        content: "";
+        position: absolute;
+        right: 22px;
+        top: 50%;
+        width: 5px;
+        height: 10px;
+        border: solid transparent;
+        border-width: 0 2px 2px 0;
+        transform: translateY(-62%) rotate(45deg);
+        z-index: 1;
+      }
+
+      .task-button.done {
+        background: linear-gradient(145deg, #008f7c, #38d8b6);
+        border-color: rgba(255, 255, 255, .42);
+        color: white;
+      }
+
+      .task-button.done::after {
+        border-color: rgba(255, 255, 255, .78);
+        background: rgba(255, 255, 255, .18);
+      }
+
+      .task-button strong,
+      .task-button small {
+        display: block;
+      }
+
+      .task-button strong {
+        font-family: Optima, "Avenir Next", "Helvetica Neue", sans-serif;
+        font-size: 19px;
+        font-weight: 600;
+      }
+
+      .task-button small {
+        margin-top: 6px;
+        font-size: 11px;
+        font-weight: 500;
+        opacity: .68;
+      }
+
+      .calendar-panel,
+      .vault-panel {
+        border-radius: 8px;
+        padding: 14px;
+        margin-bottom: 14px;
+      }
+
+      .calendar-panel {
+        width: min(100%, 334px);
+        margin: 0 auto 14px;
+        padding: 10px;
+        box-shadow: 0 12px 30px rgba(0, 95, 83, .13);
+      }
+
+      .panel-head,
+      .picker-row,
+      .controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .panel-head h2 {
+        font-size: 15px;
+      }
+
+      .icon-button {
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 50%;
+        background: var(--mint);
+        color: var(--emerald-deep);
+        font-size: 23px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .weekdays,
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+      }
+
+      .weekdays {
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .calendar-grid {
+        gap: 3px;
+        margin-top: 5px;
+      }
+
+      .day {
+        position: relative;
+        aspect-ratio: 1;
+        min-width: 0;
+        border: 1px solid rgba(17, 49, 47, .08);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, .74);
+        overflow: hidden;
+      }
+
+      .day.empty {
+        border-color: transparent;
+        background: transparent;
+      }
+
+      .day-number {
+        position: absolute;
+        top: 4px;
+        left: 5px;
+        z-index: 2;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .day.today {
+        border-color: var(--emerald);
+      }
+
+      .stamp {
+        position: absolute;
+        width: 82%;
+        height: 82%;
+        left: 9%;
+        top: 12%;
+        background: url("./bear-stamp.png") center / contain no-repeat;
+        opacity: .94;
+      }
+
+      .progress-dots {
+        position: absolute;
+        right: 4px;
+        bottom: 4px;
+        z-index: 2;
+        display: flex;
+        gap: 3px;
+      }
+
+      .progress-dots span {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--emerald);
+      }
+
+      .lock-card {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 12px;
+        border-radius: 8px;
+        background: rgba(215, 255, 245, .72);
+      }
+
+      .lock-card.unlocked {
+        background: linear-gradient(135deg, rgba(0, 169, 143, .15), rgba(255, 215, 122, .26));
+      }
+
+      .lock-mark {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: white;
+      }
+
+      .lock-mark::before {
+        content: "";
+        width: 17px;
+        height: 15px;
+        border-radius: 4px;
+        background: var(--emerald);
+        box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
+      }
+
+      .lock-mark::after {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 17px;
+        border: 4px solid var(--emerald);
+        border-bottom: 0;
+        border-radius: 14px 14px 0 0;
+        top: 9px;
+        left: 12px;
+      }
+
+      .lock-card.unlocked .lock-mark::after {
+        transform: translate(10px, -2px) rotate(34deg);
+        transform-origin: left bottom;
+      }
+
+      .lock-card h2 {
+        font-size: 17px;
+        margin-bottom: 4px;
+      }
+
+      .lock-card p {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .picker-row {
+        margin: 14px 0 10px;
+      }
+
+      .pick-button,
+      .control-button {
+        border: 0;
+        border-radius: 8px;
+        min-height: 44px;
+        padding: 0 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--emerald);
+        color: white;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .pick-button {
+        min-height: 42px;
+        border: 1px solid rgba(0, 127, 112, .18);
+        background: #e7f7f3;
+        color: var(--emerald-deep);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .pick-button input {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .pick-button.disabled,
+      .control-button:disabled {
+        opacity: .42;
+        cursor: not-allowed;
+      }
+
+      .playlist-count {
+        min-width: 44px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 900;
+        text-align: right;
+      }
+
+      .player {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        border-radius: 8px;
+        background: #0b2422;
+        display: block;
+      }
+
+      .controls {
+        margin-top: 10px;
+      }
+
+      .control-button {
+        flex: 1;
+        background: #e7f7f3;
+        color: var(--emerald-deep);
+      }
+
+      .control-button.primary {
+        background: #ffca57;
+        color: #3e2d00;
+      }
+
+      @media (max-width: 360px) {
+        h1 {
+          font-size: 32px;
+        }
+
+        .hero-bear {
+          width: 82px;
+          height: 82px;
+        }
+
+        .task-panel {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" aria-labelledby="app-title">
+        <div>
+          <h1 id="app-title">TONIGHT'S ROUTINE</h1>
+          <p class="today-label" id="todayLabel"></p>
+        </div>
+        <img class="hero-bear" src="./bear-stamp.png" alt="Bear stamp">
+      </section>
+
+      <section class="task-panel" aria-label="Daily tasks">
+        <button class="task-button" id="readingButton" type="button">
+          <span>
+            <strong>Reading</strong>
+            <small id="readingState">Pending</small>
+          </span>
+        </button>
+        <button class="task-button" id="englishButton" type="button">
+          <span>
+            <strong>English</strong>
+            <small id="englishState">Pending</small>
+          </span>
+        </button>
+      </section>
+
+      <section class="calendar-panel" aria-label="Mini calendar">
+        <div class="panel-head">
+          <button class="icon-button" id="prevMonth" type="button" aria-label="Previous month">‹</button>
+          <h2 id="monthLabel"></h2>
+          <button class="icon-button" id="nextMonth" type="button" aria-label="Next month">›</button>
+        </div>
+        <div class="weekdays" aria-hidden="true">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </section>
+
+      <section class="vault-panel" aria-label="Video player">
+        <div class="lock-card" id="lockCard">
+          <div class="lock-mark" aria-hidden="true"></div>
+          <div>
+            <h2 id="lockTitle">Reward locked</h2>
+            <p id="lockCopy">Complete Reading and English to unlock your videos.</p>
+          </div>
+        </div>
+
+        <div class="picker-row">
+          <label class="pick-button disabled" id="pickLabel">
+            <input id="videoPicker" type="file" accept="video/*" multiple disabled>
+            Select videos
+          </label>
+          <span class="playlist-count" id="playlistCount">0 videos</span>
+        </div>
+
+        <video id="player" class="player" playsinline controls></video>
+
+        <div class="controls">
+          <button class="control-button" id="stopButton" type="button" disabled>Stop</button>
+          <button class="control-button primary" id="nextButton" type="button" disabled>Next</button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const STORAGE_KEY = "bear-unlock-days-v1";
+      const today = new Date();
+      let viewYear = today.getFullYear();
+      let viewMonth = today.getMonth();
+      let playlist = [];
+      let currentVideo = 0;
+
+      const dateKey = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      };
+
+      const todayKey = dateKey(today);
+      const days = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+
+      const elements = {
+        todayLabel: document.querySelector("#todayLabel"),
+        monthLabel: document.querySelector("#monthLabel"),
+        calendarGrid: document.querySelector("#calendarGrid"),
+        readingButton: document.querySelector("#readingButton"),
+        englishButton: document.querySelector("#englishButton"),
+        readingState: document.querySelector("#readingState"),
+        englishState: document.querySelector("#englishState"),
+        lockCard: document.querySelector("#lockCard"),
+        lockTitle: document.querySelector("#lockTitle"),
+        lockCopy: document.querySelector("#lockCopy"),
+        pickLabel: document.querySelector("#pickLabel"),
+        videoPicker: document.querySelector("#videoPicker"),
+        playlistCount: document.querySelector("#playlistCount"),
+        player: document.querySelector("#player"),
+        stopButton: document.querySelector("#stopButton"),
+        nextButton: document.querySelector("#nextButton"),
+        prevMonth: document.querySelector("#prevMonth"),
+        nextMonth: document.querySelector("#nextMonth"),
+      };
+
+      const formatDate = new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "long",
+      });
+
+      const formatMonth = new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "long",
+      });
+
+      function getDayRecord(key) {
+        if (!days[key]) {
+          days[key] = { reading: false, english: false };
+        }
+        return days[key];
+      }
+
+      function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(days));
+      }
+
+      function isUnlocked() {
+        const record = getDayRecord(todayKey);
+        return record.reading && record.english;
+      }
+
+      function completeTask(task) {
+        const record = getDayRecord(todayKey);
+        record[task] = true;
+        save();
+        render();
+      }
+
+      function renderTasks() {
+        const record = getDayRecord(todayKey);
+        elements.readingButton.classList.toggle("done", record.reading);
+        elements.englishButton.classList.toggle("done", record.english);
+        elements.readingState.textContent = record.reading ? "Complete" : "Pending";
+        elements.englishState.textContent = record.english ? "Complete" : "Pending";
+      }
+
+      function renderLock() {
+        const unlocked = isUnlocked();
+        elements.lockCard.classList.toggle("unlocked", unlocked);
+        elements.lockTitle.textContent = unlocked ? "Unlocked" : "Reward locked";
+        elements.lockCopy.textContent = unlocked
+          ? "Choose multiple videos from Photos. They will play on repeat."
+          : "Complete Reading and English to unlock your videos.";
+        elements.videoPicker.disabled = !unlocked;
+        elements.pickLabel.classList.toggle("disabled", !unlocked);
+      }
+
+      function renderCalendar() {
+        elements.monthLabel.textContent = formatMonth.format(new Date(viewYear, viewMonth, 1));
+        elements.calendarGrid.replaceChildren();
+
+        const first = new Date(viewYear, viewMonth, 1);
+        const last = new Date(viewYear, viewMonth + 1, 0);
+
+        for (let i = 0; i < first.getDay(); i += 1) {
+          const blank = document.createElement("div");
+          blank.className = "day empty";
+          elements.calendarGrid.append(blank);
+        }
+
+        for (let day = 1; day <= last.getDate(); day += 1) {
+          const cellDate = new Date(viewYear, viewMonth, day);
+          const key = dateKey(cellDate);
+          const record = days[key];
+          const count = Number(Boolean(record?.reading)) + Number(Boolean(record?.english));
+          const cell = document.createElement("div");
+          cell.className = "day";
+          if (key === todayKey) cell.classList.add("today");
+
+          const number = document.createElement("span");
+          number.className = "day-number";
+          number.textContent = String(day);
+          cell.append(number);
+
+          if (count > 0) {
+            const stamp = document.createElement("span");
+            stamp.className = "stamp";
+            stamp.style.opacity = count === 2 ? ".96" : ".42";
+            cell.append(stamp);
+
+            const dots = document.createElement("span");
+            dots.className = "progress-dots";
+            for (let i = 0; i < count; i += 1) {
+              dots.append(document.createElement("span"));
+            }
+            cell.append(dots);
+          }
+
+          elements.calendarGrid.append(cell);
+        }
+      }
+
+      function releasePlaylist() {
+        playlist.forEach((item) => URL.revokeObjectURL(item.url));
+        playlist = [];
+        currentVideo = 0;
+      }
+
+      function updateVideoControls() {
+        const hasVideos = playlist.length > 0;
+        elements.playlistCount.textContent = `${playlist.length} ${playlist.length === 1 ? "video" : "videos"}`;
+        elements.stopButton.disabled = !hasVideos;
+        elements.nextButton.disabled = !hasVideos;
+      }
+
+      function loadVideo(index, autoplay = true) {
+        if (!playlist.length) return;
+        currentVideo = (index + playlist.length) % playlist.length;
+        elements.player.src = playlist[currentVideo].url;
+        elements.player.load();
+        if (autoplay) {
+          elements.player.play().catch(() => {});
+        }
+      }
+
+      function chooseVideos(event) {
+        const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith("video/"));
+        if (!files.length) return;
+        releasePlaylist();
+        playlist = files.map((file) => ({
+          name: file.name,
+          url: URL.createObjectURL(file),
+        }));
+        updateVideoControls();
+        loadVideo(0, true);
+      }
+
+      function stopPlayback() {
+        elements.player.pause();
+        elements.player.currentTime = 0;
+      }
+
+      function nextVideo() {
+        loadVideo(currentVideo + 1, true);
+      }
+
+      function render() {
+        elements.todayLabel.textContent = formatDate.format(today);
+        renderTasks();
+        renderLock();
+        renderCalendar();
+        updateVideoControls();
+      }
+
+      elements.readingButton.addEventListener("click", () => completeTask("reading"));
+      elements.englishButton.addEventListener("click", () => completeTask("english"));
+      elements.prevMonth.addEventListener("click", () => {
+        viewMonth -= 1;
+        if (viewMonth < 0) {
+          viewMonth = 11;
+          viewYear -= 1;
+        }
+        renderCalendar();
+      });
+      elements.nextMonth.addEventListener("click", () => {
+        viewMonth += 1;
+        if (viewMonth > 11) {
+          viewMonth = 0;
+          viewYear += 1;
+        }
+        renderCalendar();
+      });
+      elements.videoPicker.addEventListener("change", chooseVideos);
+      elements.stopButton.addEventListener("click", stopPlayback);
+      elements.nextButton.addEventListener("click", nextVideo);
+      elements.player.addEventListener("ended", () => loadVideo(currentVideo + 1, true));
+
+      render();
+    </script>
+  </body>
+</html>
