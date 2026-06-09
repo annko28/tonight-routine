@@ -709,5 +709,30 @@
 
       render();
     </script>
-  </body>
+  <div id="omikuji-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>★ 今夜のあなたへのメッセージ ★</h2>
+            <p class="modal-sub">3枚の手紙から、直感で1枚選んでみてください</p>
+            
+            <div class="card-container">
+                <div class="card" onclick="flipCard(this)">
+                    <div class="card-front">✉</div>
+                    <div class="card-back"><span class="msg-text"></span></div>
+                </div>
+                <div class="card" onclick="flipCard(this)">
+                    <div class="card-front">✉</div>
+                    <div class="card-back"><span class="msg-text"></span></div>
+                </div>
+                <div class="card" onclick="flipCard(this)">
+                    <div class="card-front">✉</div>
+                    <div class="card-back"><span class="msg-text"></span></div>
+                </div>
+            </div>
+            
+            <button id="close-modal-btn" class="hidden">良い夢を、おやすみなさい ☾</button>
+        </div>
+    </div>
+    </body>
+</html>
+</body>
 </html>
