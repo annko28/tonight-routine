@@ -1,88 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const taskInput = document.getElementById('task-input');
-    const addTaskBtn = document.getElementById('add-task-btn');
-    const taskList = document.getElementById('task-list');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    const finishBtn = document.getElementById('finish-btn');
-
-    let tasks = [];
-
-    // タスク追加ボタン
-    addTaskBtn.addEventListener('click', () => {
-        const taskText = taskInput.value.trim();
-        if (taskText !== '') {
-            addTask(taskText);
-            taskInput.value = '';
-        }
-    });
-
-    // おやすみボタン（★おみくじ画面が出るようにここに組み込みました！）
-    finishBtn.addEventListener('click', () => {
-        showOmikuji();
-        setTimeout(() => {
-            alert('おやすみなさい！今日もお疲れ様でした。');
-        }, 100);
-    });
-
-    function addTask(text) {
-        const task = {
-            id: Date.now(),
-            text: text,
-            completed: false
-        };
-        tasks.push(task);
-        renderTasks();
-    }
-
-    function renderTasks() {
-        taskList.innerHTML = '';
-        tasks.forEach(task => {
-            const li = document.createElement('li');
-            li.className = 'task-item';
-            if (task.completed) {
-                li.classList.add('completed');
-            }
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = task.completed;
-            checkbox.addEventListener('change', () => {
-                task.completed = checkbox.checked;
-                updateProgress();
-                renderTasks();
-            });
-
-            const span = document.createElement('span');
-            span.textContent = task.text;
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = '削除';
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.addEventListener('click', () => {
-                tasks = tasks.filter(t => t.id !== task.id);
-                updateProgress();
-                renderTasks();
-            });
-
-            li.appendChild(checkbox);
-            li.appendChild(span);
-            li.appendChild(deleteBtn);
-            taskList.appendChild(li);
-        });
-        updateProgress();
-    }
-
-    function updateProgress() {
-        const totalTasks = tasks.length;
-        const completedTasks = tasks.filter(t => t.completed).length;
-        const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-
-        progressBar.style.width = `${progress}%`;
-        progressText.textContent = `${progress}%`;
-    }
-});
-
 // =========================================
 // 心理学おみくじシステム
 // =========================================
@@ -95,31 +10,53 @@ const messages = [
     "目を閉じる前に、今日あった『ちょっと嬉しかったこと』を1つだけ思い浮かべてみて。良い夢に繋がります。"
 ];
 
+// 初期化（自動で画面を開く）
+window.onload = function() {
+    showOmikuji();
+};
+
 function showOmikuji() {
+    // 画面中央に配置されるように調整
+    window.scrollTo(0, 0); 
+    
     const cards = document.querySelectorAll('.card');
-    document.getElementById('close-modal-btn').classList.add('hidden');
+    const closeBtn = document.getElementById('close-modal-btn');
+    
+    // ボタンを隠す
+    closeBtn.classList.add('hidden');
+    
+    // ランダムにメッセージを3つ選んでシャッフル配置
     let shuffledTexts = [...messages].sort(() => 0.5 - Math.random());
     
     cards.forEach((card, index) => {
+        // カードの状態をリセット
         card.classList.remove('flipped');
-        card.style.pointerEvents = 'auto'; // タップのロックを解除
+        card.style.pointerEvents = 'auto'; // クリックできるようにロックを解除
+        // カードの裏側にメッセージを入れる
         card.querySelector('.msg-text').innerText = shuffledTexts[index];
     });
-    document.getElementById('omikuji-modal').classList.remove('hidden');
 }
 
-// HTML側から直接タップできるようにwindowに登録
+// カードをタップした時の処理（HTMLのonclickから呼び出せるようにwindowに登録）
 window.flipCard = function(selectedCard) {
+    // すでにめくられている場合は何もしない
     if (selectedCard.classList.contains('flipped')) return;
 
+    // 選んだカードをひっくり返す
     selectedCard.classList.add('flipped');
-    document.querySelectorAll('.card').forEach(card => card.style.pointerEvents = 'none'); // 他のカードをロック
     
+    // 1枚選んだら、他のカードはタップできないようにする
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => card.style.pointerEvents = 'none');
+    
+    // 「おやすみ」ボタンを少し遅れて表示させる
     setTimeout(() => {
         document.getElementById('close-modal-btn').classList.remove('hidden');
     }, 600);
 };
 
+// おやすみボタンをクリック
 document.getElementById('close-modal-btn').addEventListener('click', () => {
-    document.getElementById('omikuji-modal').classList.add('hidden');
+    // ボタンのテキストを変更するなど、終了の演出をここに書けます。
+    document.getElementById('close-modal-btn').innerText = '良い夢を、おやすみなさい ☾';
 });
