@@ -39,10 +39,24 @@
       overflow-y: auto;
     }
 
-    .sidebar h2 {
+    /* タイトルとクマの配置 */
+    .routine-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .routine-bear {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+
+    .routine-header h2 {
       font-size: 1rem;
       color: var(--main-color); 
-      margin: 0 0 10px 0;
+      margin: 0;
       letter-spacing: 1px;
       font-weight: 600;
     }
@@ -79,41 +93,6 @@
     .task-text {
       font-size: 0.95rem;
       font-weight: 500;
-    }
-
-    /* スタンプカード（クマ固定） */
-    .stamp-card {
-      background-color: var(--item-bg);
-      padding: 20px 15px;
-      border-radius: 10px;
-      text-align: center;
-    }
-
-    .stamp-container {
-      display: flex;
-      justify-content: center;
-      gap: 25px;
-      margin-top: 12px;
-    }
-
-    .stamp {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background-color: #333333;
-      border: 2px dashed #555555;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-    }
-
-    .stamp.active {
-      background-image: url('mascot-tam-walk2504.png'); 
-      background-color: var(--text-color);
-      border: 2px solid var(--main-color);
-      transform: scale(1.05) rotate(5deg);
-      box-shadow: 0 0 15px rgba(0, 164, 116, 0.4);
     }
 
     /* カレンダーカード */
@@ -334,7 +313,10 @@
 
   <div class="sidebar">
     <div>
-      <h2>TONIGHT'S ROUTINE</h2>
+      <div class="routine-header">
+        <img src="mascot-tam-walk2504.png" alt="Bear" class="routine-bear">
+        <h2>TONIGHT'S ROUTINE</h2>
+      </div>
       <div class="task-list">
         <label class="task-item">
           <input type="checkbox" id="task-english" onchange="checkProgress()">
@@ -344,14 +326,6 @@
           <input type="checkbox" id="task-reading" onchange="checkProgress()">
           <span class="task-text">📖 読書タイム</span>
         </label>
-      </div>
-    </div>
-
-    <div class="stamp-card">
-      <h2>REWARD STAMPS</h2>
-      <div class="stamp-container">
-        <div class="stamp" id="stamp1"></div>
-        <div class="stamp" id="stamp2"></div>
       </div>
     </div>
 
@@ -421,20 +395,10 @@
     function checkProgress() {
       const englishDone = document.getElementById('task-english').checked;
       const readingDone = document.getElementById('task-reading').checked;
-      
-      const stamp1 = document.getElementById('stamp1');
-      const stamp2 = document.getElementById('stamp2');
       const lockOverlay = document.getElementById('lockOverlay');
 
       const today = new Date();
       const dateKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-
-      // 左側のクマちゃんスタンプのアニメーション制御
-      if (englishDone) stamp1.classList.add('active');
-      else stamp1.classList.remove('active');
-
-      if (readingDone) stamp2.classList.add('active');
-      else stamp2.classList.remove('active');
 
       // 両方クリアした時の処理
       if (englishDone && readingDone) {
@@ -444,19 +408,19 @@
         if (!completedDates[dateKey]) {
           const randomIndex = Math.floor(Math.random() * photoList.length);
           const drawnPhoto = photoList[randomIndex];
-          completedDates[dateKey] = drawnPhoto; // 引いた写真を記憶
+          completedDates[dateKey] = drawnPhoto; 
         }
       } else {
         // チェックが外れた時の処理
         lockOverlay.classList.remove('unlocked');
         document.getElementById('videoPlayer').pause();
         
+        // 当日の記録を消去
         if (completedDates[dateKey]) {
-          delete completedDates[dateKey]; // カレンダーの写真を消去
+          delete completedDates[dateKey]; 
         }
       }
 
-      // ブラウザに状態を保存してカレンダーを更新
       localStorage.setItem('routineLog', JSON.stringify(completedDates));
       renderCalendar();
     }
@@ -481,19 +445,16 @@
       const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
       const today = new Date();
 
-      // 空白マスを埋める
       for (let i = 0; i < firstDay; i++) {
         const empty = document.createElement('div');
         grid.appendChild(empty);
       }
 
-      // 日付マスの生成
       for (let day = 1; day <= totalDays; day++) {
         const dayDiv = document.createElement('div');
         dayDiv.className = 'day';
         dayDiv.innerText = day;
 
-        // 今日の日付をハイライト
         if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && day === today.getDate()) {
           dayDiv.classList.add('today');
         }
@@ -503,14 +464,14 @@
         
         // その日に保存された写真があれば表示する
         if (savedPhoto) {
-          // 過去のデータが古い仕様（true）で残っている場合はクマ画像を出す
-          if (savedPhoto === true) {
-            dayDiv.style.backgroundImage = `url('mascot-tam-walk2504.png')`;
+          // 過去のテストデータ（クマ画像）が残っていた場合の安全策（p1.jpgを表示）
+          if (savedPhoto === true || savedPhoto.includes('stamp-bear')) {
+            dayDiv.style.backgroundImage = `url('p1.jpg')`;
           } else {
-            // 当選したランダム写真を表示
+            // 当選した1〜10のランダム写真を表示
             dayDiv.style.backgroundImage = `url('${savedPhoto}')`;
           }
-          dayDiv.style.color = 'transparent'; // 日付の数字を隠して写真を主役に
+          dayDiv.style.color = 'transparent'; 
         }
 
         grid.appendChild(dayDiv);
