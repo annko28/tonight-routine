@@ -1,738 +1,599 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#00a98f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Tonight's Routine">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="./bear-stamp.png">
-    <title>Tonight's Routine</title>
-    <style>
-      :root {
-        color-scheme: light;
-        --emerald: #00a98f;
-        --emerald-deep: #007f70;
-        --mint: #d7fff5;
-        --ink: #11312f;
-        --muted: #5b7370;
-        --line: rgba(0, 127, 112, .18);
-        --paper: rgba(255, 255, 255, .86);
-        --shadow: 0 18px 45px rgba(0, 95, 83, .18);
-      }
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Routine Video Player & Calendar</title>
+  <style>
+    :root {
+      --main-color: #00A474;
+      --bg-color: #121212;
+      --panel-bg: #1A1A1A;
+      --item-bg: #262626;
+      --text-color: #FFFFFF;
+      --text-muted: #AAAAAA;
+      --border-color: #2D2D2D;
+    }
 
-      * {
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 左側：サイドバー */
+    .sidebar {
+      width: 350px;
+      background-color: var(--panel-bg);
+      border-right: 1px solid var(--border-color);
+      padding: 25px 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+      overflow-y: auto;
+    }
+
+    .sidebar h2 {
+      font-size: 1rem;
+      color: var(--main-color); 
+      margin: 0 0 10px 0;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    /* タスクリスト */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      background-color: var(--item-bg);
+      padding: 14px 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .task-item:hover {
+      background-color: #323232;
+    }
+
+    .task-item input[type="checkbox"] {
+      margin-right: 15px;
+      width: 20px;
+      height: 20px;
+      accent-color: var(--main-color);
+      cursor: pointer;
+    }
+
+    .task-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    /* スタンプカード（クマ固定） */
+    .stamp-card {
+      background-color: var(--item-bg);
+      padding: 20px 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stamp-container {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      margin-top: 12px;
+    }
+
+    .stamp {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background-color: #333333;
+      border: 2px dashed #555555;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .stamp.active {
+      background-image: url('mascot-tam-walk2504.png'); 
+      background-color: var(--text-color);
+      border: 2px solid var(--main-color);
+      transform: scale(1.05) rotate(5deg);
+      box-shadow: 0 0 15px rgba(0, 164, 116, 0.4);
+    }
+
+    /* カレンダーカード */
+    .calendar-card {
+      background-color: var(--item-bg);
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .calendar-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .calendar-header button {
+      background: none;
+      border: none;
+      color: var(--main-color);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 5px 10px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      text-align: center;
+      font-size: 0.8rem;
+    }
+
+    .weekday {
+      color: var(--text-muted);
+      font-weight: 600;
+      padding-bottom: 5px;
+    }
+
+    .day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      background-color: var(--panel-bg);
+      font-weight: 500;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .day.today {
+      border: 1px solid var(--main-color);
+      color: var(--main-color);
+      font-weight: 700;
+    }
+
+    /* 右側：メインコンテンツ */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 30px;
+      box-sizing: border-box;
+    }
+
+    .player-container {
+      width: 100%;
+      max-width: 850px;
+      text-align: center;
+    }
+
+    #currentTitle {
+      font-size: 1rem;
+      margin-bottom: 15px;
+      color: var(--text-muted);
+      height: 1.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 10px;
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      background-color: #000000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      aspect-ratio: 16 / 9;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* 🔒 ロック画面 */
+    .lock-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(18, 18, 18, 0.98);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.4s ease;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .lock-overlay.unlocked {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .lock-message {
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .lock-icon {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+      color: var(--main-color);
+    }
+
+    /* コントロール群 */
+    .controls {
+      margin-top: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button.control-btn, label.file-label {
+      background-color: var(--item-bg);
+      color: var(--text-color);
+      border: 1px solid #383838;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button.control-btn:hover, label.file-label:hover {
+      background-color: #333333;
+      border-color: #555555;
+    }
+
+    button.control-btn.active {
+      background-color: var(--main-color);
+      border-color: var(--main-color);
+      color: #ffffff;
+    }
+
+    .nav-btn {
+      min-width: 70px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+        overflow-y: auto;
+        height: auto;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 20px;
         box-sizing: border-box;
       }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: "Avenir Next", "Helvetica Neue", -apple-system, BlinkMacSystemFont, sans-serif;
-        background:
-          radial-gradient(circle at 20% 10%, rgba(255, 236, 184, .85), transparent 26rem),
-          linear-gradient(145deg, #e6fff8 0%, #f9fffd 46%, #c9f7ef 100%);
-        color: var(--ink);
-        letter-spacing: 0;
-      }
-
-      button,
-      label {
-        -webkit-tap-highlight-color: transparent;
-      }
-
-      .app-shell {
-        width: min(100%, 460px);
-        min-height: 100vh;
-        margin: 0 auto;
-        padding: max(18px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
-      }
-
-      .hero {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 14px 4px 18px;
-      }
-
-      h1,
-      h2,
-      p {
-        margin: 0;
-      }
-
-      h1 {
-        max-width: 280px;
-        font-family: Optima, "Avenir Next", "Helvetica Neue", sans-serif;
-        font-size: 31px;
-        line-height: .98;
-        font-weight: 600;
-      }
-
-      .today-label {
-        margin-top: 10px;
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 500;
-      }
-
-      .hero-bear {
-        width: 96px;
-        height: 96px;
-        object-fit: contain;
-      }
-
-      .task-panel {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-bottom: 14px;
-      }
-
-      .task-button,
-      .calendar-panel,
-      .vault-panel {
-        border: 1px solid var(--line);
-        background: var(--paper);
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(18px);
-      }
-
-      .task-button {
-        position: relative;
-        min-height: 76px;
-        border-radius: 8px;
-        padding: 15px 42px 15px 16px;
-        color: var(--ink);
-        text-align: left;
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        overflow: hidden;
-        transition: transform .18s ease, border-color .18s ease, background .18s ease;
-      }
-
-      .task-button::after {
-        content: "";
-        position: absolute;
-        right: 16px;
-        top: 50%;
-        width: 18px;
-        height: 18px;
-        border: 1px solid rgba(0, 127, 112, .42);
-        border-radius: 50%;
-        transform: translateY(-50%);
-      }
-
-      .task-button::before {
-        content: "";
-        position: absolute;
-        right: 22px;
-        top: 50%;
-        width: 5px;
-        height: 10px;
-        border: solid transparent;
-        border-width: 0 2px 2px 0;
-        transform: translateY(-62%) rotate(45deg);
-        z-index: 1;
-      }
-
-      .task-button.done {
-        background: linear-gradient(145deg, #008f7c, #38d8b6);
-        border-color: rgba(255, 255, 255, .42);
-        color: white;
-      }
-
-      .task-button.done::after {
-        border-color: rgba(255, 255, 255, .78);
-        background: rgba(255, 255, 255, .18);
-      }
-
-      .task-button strong,
-      .task-button small {
-        display: block;
-      }
-
-      .task-button strong {
-        font-family: Optima, "Avenir Next", "Helvetica Neue", sans-serif;
-        font-size: 19px;
-        font-weight: 600;
-      }
-
-      .task-button small {
-        margin-top: 6px;
-        font-size: 11px;
-        font-weight: 500;
-        opacity: .68;
-      }
-
-      .calendar-panel,
-      .vault-panel {
-        border-radius: 8px;
-        padding: 14px;
-        margin-bottom: 14px;
-      }
-
-      .calendar-panel {
-        width: min(100%, 334px);
-        margin: 0 auto 14px;
-        padding: 10px;
-        box-shadow: 0 12px 30px rgba(0, 95, 83, .13);
-      }
-
-      .panel-head,
-      .picker-row,
-      .controls {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-      }
-
-      .panel-head h2 {
-        font-size: 15px;
-      }
-
-      .icon-button {
-        width: 30px;
-        height: 30px;
-        border: 0;
-        border-radius: 50%;
-        background: var(--mint);
-        color: var(--emerald-deep);
-        font-size: 23px;
-        line-height: 1;
-        cursor: pointer;
-      }
-
-      .weekdays,
-      .calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-      }
-
-      .weekdays {
-        margin-top: 9px;
-        color: var(--muted);
-        font-size: 10px;
-        font-weight: 800;
-        text-align: center;
-      }
-
-      .calendar-grid {
-        gap: 3px;
-        margin-top: 5px;
-      }
-
-      .day {
-        position: relative;
-        aspect-ratio: 1;
-        min-width: 0;
-        border: 1px solid rgba(17, 49, 47, .08);
-        border-radius: 6px;
-        background: rgba(255, 255, 255, .74);
-        overflow: hidden;
-      }
-
-      .day.empty {
-        border-color: transparent;
-        background: transparent;
-      }
-
-      .day-number {
-        position: absolute;
-        top: 4px;
-        left: 5px;
-        z-index: 2;
-        font-size: 10px;
-        font-weight: 800;
-      }
-
-      .day.today {
-        border-color: var(--emerald);
-      }
-
-      .stamp {
-        position: absolute;
-        width: 82%;
-        height: 82%;
-        left: 9%;
-        top: 12%;
-        background: url("./bear-stamp.png") center / contain no-repeat;
-        opacity: .94;
-      }
-
-      .progress-dots {
-        position: absolute;
-        right: 4px;
-        bottom: 4px;
-        z-index: 2;
-        display: flex;
-        gap: 3px;
-      }
-
-      .progress-dots span {
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: var(--emerald);
-      }
-
-      .lock-card {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        padding: 12px;
-        border-radius: 8px;
-        background: rgba(215, 255, 245, .72);
-      }
-
-      .lock-card.unlocked {
-        background: linear-gradient(135deg, rgba(0, 169, 143, .15), rgba(255, 215, 122, .26));
-      }
-
-      .lock-mark {
-        position: relative;
-        width: 44px;
-        height: 44px;
-        flex: 0 0 auto;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        background: white;
-      }
-
-      .lock-mark::before {
-        content: "";
-        width: 17px;
-        height: 15px;
-        border-radius: 4px;
-        background: var(--emerald);
-        box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12);
-      }
-
-      .lock-mark::after {
-        content: "";
-        position: absolute;
-        width: 18px;
-        height: 17px;
-        border: 4px solid var(--emerald);
-        border-bottom: 0;
-        border-radius: 14px 14px 0 0;
-        top: 9px;
-        left: 12px;
-      }
-
-      .lock-card.unlocked .lock-mark::after {
-        transform: translate(10px, -2px) rotate(34deg);
-        transform-origin: left bottom;
-      }
-
-      .lock-card h2 {
-        font-size: 17px;
-        margin-bottom: 4px;
-      }
-
-      .lock-card p {
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.45;
-      }
-
-      .picker-row {
-        margin: 14px 0 10px;
-      }
-
-      .pick-button,
-      .control-button {
-        border: 0;
-        border-radius: 8px;
-        min-height: 44px;
-        padding: 0 18px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--emerald);
-        color: white;
-        font-size: 15px;
-        font-weight: 800;
-        cursor: pointer;
-      }
-
-      .pick-button {
-        min-height: 42px;
-        border: 1px solid rgba(0, 127, 112, .18);
-        background: #e7f7f3;
-        color: var(--emerald-deep);
-        font-size: 14px;
-        font-weight: 600;
-      }
-
-      .pick-button input {
-        position: absolute;
-        inline-size: 1px;
-        block-size: 1px;
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .pick-button.disabled,
-      .control-button:disabled {
-        opacity: .42;
-        cursor: not-allowed;
-      }
-
-      .playlist-count {
-        min-width: 44px;
-        color: var(--muted);
-        font-size: 13px;
-        font-weight: 900;
-        text-align: right;
-      }
-
-      .player {
+      .main-content {
         width: 100%;
-        aspect-ratio: 16 / 10;
-        border-radius: 8px;
-        background: #0b2422;
-        display: block;
+        height: auto;
+        padding: 20px;
+        box-sizing: border-box;
       }
+    }
+  </style>
+</head>
+<body>
 
-      .controls {
-        margin-top: 10px;
-      }
+  <div class="sidebar">
+    <div>
+      <h2>TONIGHT'S ROUTINE</h2>
+      <div class="task-list">
+        <label class="task-item">
+          <input type="checkbox" id="task-english" onchange="checkProgress()">
+          <span class="task-text">📚 夜の英語学習</span>
+        </label>
+        <label class="task-item">
+          <input type="checkbox" id="task-reading" onchange="checkProgress()">
+          <span class="task-text">📖 読書タイム</span>
+        </label>
+      </div>
+    </div>
 
-      .control-button {
-        flex: 1;
-        background: #e7f7f3;
-        color: var(--emerald-deep);
-      }
+    <div class="stamp-card">
+      <h2>REWARD STAMPS</h2>
+      <div class="stamp-container">
+        <div class="stamp" id="stamp1"></div>
+        <div class="stamp" id="stamp2"></div>
+      </div>
+    </div>
 
-      .control-button.primary {
-        background: #ffca57;
-        color: #3e2d00;
-      }
+    <div class="calendar-card">
+      <div class="calendar-header">
+        <button onclick="prevMonth()">◀</button>
+        <h3 id="calendarTitle"></h3>
+        <button onclick="nextMonth()">▶</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+  </div>
 
-      @media (max-width: 360px) {
-        h1 {
-          font-size: 32px;
-        }
-
-        .hero-bear {
-          width: 82px;
-          height: 82px;
-        }
-
-        .task-panel {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <main class="app-shell">
-      <section class="hero" aria-labelledby="app-title">
-        <div>
-          <h1 id="app-title">TONIGHT'S ROUTINE</h1>
-          <p class="today-label" id="todayLabel"></p>
-        </div>
-        <img class="hero-bear" src="./bear-stamp.png" alt="Bear stamp">
-      </section>
-
-      <section class="task-panel" aria-label="Daily tasks">
-        <button class="task-button" id="readingButton" type="button">
-          <span>
-            <strong>Reading</strong>
-            <small id="readingState">Pending</small>
-          </span>
-        </button>
-        <button class="task-button" id="englishButton" type="button">
-          <span>
-            <strong>English</strong>
-            <small id="englishState">Pending</small>
-          </span>
-        </button>
-      </section>
-
-      <section class="calendar-panel" aria-label="Mini calendar">
-        <div class="panel-head">
-          <button class="icon-button" id="prevMonth" type="button" aria-label="Previous month">‹</button>
-          <h2 id="monthLabel"></h2>
-          <button class="icon-button" id="nextMonth" type="button" aria-label="Next month">›</button>
-        </div>
-        <div class="weekdays" aria-hidden="true">
-          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-        </div>
-        <div class="calendar-grid" id="calendarGrid"></div>
-      </section>
-
-      <section class="vault-panel" aria-label="Video player">
-        <div class="lock-card" id="lockCard">
-          <div class="lock-mark" aria-hidden="true"></div>
-          <div>
-            <h2 id="lockTitle">Reward locked</h2>
-            <p id="lockCopy">Complete Reading and English to unlock your videos.</p>
+  <div class="main-content">
+    <div class="player-container">
+      <div id="currentTitle">動画を選択してください</div>
+      
+      <div class="video-wrapper">
+        <div class="lock-overlay" id="lockOverlay">
+          <div class="lock-icon">🔒</div>
+          <div class="lock-message">
+            夜のルーティンを完了すると<br>
+            シアタールームが解放されます！✨
           </div>
         </div>
-
-        <div class="picker-row">
-          <label class="pick-button disabled" id="pickLabel">
-            <input id="videoPicker" type="file" accept="video/*" multiple disabled>
-            Select videos
+        <video id="videoPlayer" controls></video>
+      </div>
+      
+      <div class="controls">
+        <div class="btn-group">
+          <button class="control-btn nav-btn" id="prevBtn">◀ 前へ</button>
+          <label class="file-label">
+            動画を選択
+            <input type="file" id="fileInput" multiple accept="video/*">
           </label>
-          <span class="playlist-count" id="playlistCount">0 videos</span>
+          <button class="control-btn nav-btn" id="nextBtn">次へ ▶</button>
         </div>
-
-        <video id="player" class="player" playsinline controls></video>
-
-        <div class="controls">
-          <button class="control-button" id="stopButton" type="button" disabled>Stop</button>
-          <button class="control-button primary" id="nextButton" type="button" disabled>Next</button>
+        <div class="btn-group">
+          <button class="control-btn" id="loopBtn">全曲リピート OFF</button>
         </div>
-      </section>
-    </main>
-
-    <script>
-      const STORAGE_KEY = "bear-unlock-days-v1";
-      const today = new Date();
-      let viewYear = today.getFullYear();
-      let viewMonth = today.getMonth();
-      let playlist = [];
-      let currentVideo = 0;
-
-      const dateKey = (date) => {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, "0");
-        const d = String(date.getDate()).padStart(2, "0");
-        return `${y}-${m}-${d}`;
-      };
-
-      const todayKey = dateKey(today);
-      const days = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-
-      const elements = {
-        todayLabel: document.querySelector("#todayLabel"),
-        monthLabel: document.querySelector("#monthLabel"),
-        calendarGrid: document.querySelector("#calendarGrid"),
-        readingButton: document.querySelector("#readingButton"),
-        englishButton: document.querySelector("#englishButton"),
-        readingState: document.querySelector("#readingState"),
-        englishState: document.querySelector("#englishState"),
-        lockCard: document.querySelector("#lockCard"),
-        lockTitle: document.querySelector("#lockTitle"),
-        lockCopy: document.querySelector("#lockCopy"),
-        pickLabel: document.querySelector("#pickLabel"),
-        videoPicker: document.querySelector("#videoPicker"),
-        playlistCount: document.querySelector("#playlistCount"),
-        player: document.querySelector("#player"),
-        stopButton: document.querySelector("#stopButton"),
-        nextButton: document.querySelector("#nextButton"),
-        prevMonth: document.querySelector("#prevMonth"),
-        nextMonth: document.querySelector("#nextMonth"),
-      };
-
-      const formatDate = new Intl.DateTimeFormat("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        weekday: "long",
-      });
-
-      const formatMonth = new Intl.DateTimeFormat("en-US", {
-        year: "numeric",
-        month: "long",
-      });
-
-      function getDayRecord(key) {
-        if (!days[key]) {
-          days[key] = { reading: false, english: false };
-        }
-        return days[key];
-      }
-
-      function save() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(days));
-      }
-
-      function isUnlocked() {
-        const record = getDayRecord(todayKey);
-        return record.reading && record.english;
-      }
-
-      function completeTask(task) {
-        const record = getDayRecord(todayKey);
-        record[task] = true;
-        save();
-        render();
-      }
-
-      function renderTasks() {
-        const record = getDayRecord(todayKey);
-        elements.readingButton.classList.toggle("done", record.reading);
-        elements.englishButton.classList.toggle("done", record.english);
-        elements.readingState.textContent = record.reading ? "Complete" : "Pending";
-        elements.englishState.textContent = record.english ? "Complete" : "Pending";
-      }
-
-      function renderLock() {
-        const unlocked = isUnlocked();
-        elements.lockCard.classList.toggle("unlocked", unlocked);
-        elements.lockTitle.textContent = unlocked ? "Unlocked" : "Reward locked";
-        elements.lockCopy.textContent = unlocked
-          ? "Choose multiple videos from Photos. They will play on repeat."
-          : "Complete Reading and English to unlock your videos.";
-        elements.videoPicker.disabled = !unlocked;
-        elements.pickLabel.classList.toggle("disabled", !unlocked);
-      }
-
-      function renderCalendar() {
-        elements.monthLabel.textContent = formatMonth.format(new Date(viewYear, viewMonth, 1));
-        elements.calendarGrid.replaceChildren();
-
-        const first = new Date(viewYear, viewMonth, 1);
-        const last = new Date(viewYear, viewMonth + 1, 0);
-
-        for (let i = 0; i < first.getDay(); i += 1) {
-          const blank = document.createElement("div");
-          blank.className = "day empty";
-          elements.calendarGrid.append(blank);
-        }
-
-        for (let day = 1; day <= last.getDate(); day += 1) {
-          const cellDate = new Date(viewYear, viewMonth, day);
-          const key = dateKey(cellDate);
-          const record = days[key];
-          const count = Number(Boolean(record?.reading)) + Number(Boolean(record?.english));
-          const cell = document.createElement("div");
-          cell.className = "day";
-          if (key === todayKey) cell.classList.add("today");
-
-          const number = document.createElement("span");
-          number.className = "day-number";
-          number.textContent = String(day);
-          cell.append(number);
-
-          if (count > 0) {
-            const stamp = document.createElement("span");
-            stamp.className = "stamp";
-            stamp.style.opacity = count === 2 ? ".96" : ".42";
-            cell.append(stamp);
-
-            const dots = document.createElement("span");
-            dots.className = "progress-dots";
-            for (let i = 0; i < count; i += 1) {
-              dots.append(document.createElement("span"));
-            }
-            cell.append(dots);
-          }
-
-          elements.calendarGrid.append(cell);
-        }
-      }
-
-      function releasePlaylist() {
-        playlist.forEach((item) => URL.revokeObjectURL(item.url));
-        playlist = [];
-        currentVideo = 0;
-      }
-
-      function updateVideoControls() {
-        const hasVideos = playlist.length > 0;
-        elements.playlistCount.textContent = `${playlist.length} ${playlist.length === 1 ? "video" : "videos"}`;
-        elements.stopButton.disabled = !hasVideos;
-        elements.nextButton.disabled = !hasVideos;
-      }
-
-      function loadVideo(index, autoplay = true) {
-        if (!playlist.length) return;
-        currentVideo = (index + playlist.length) % playlist.length;
-        elements.player.src = playlist[currentVideo].url;
-        elements.player.load();
-        if (autoplay) {
-          elements.player.play().catch(() => {});
-        }
-      }
-
-      function chooseVideos(event) {
-        const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith("video/"));
-        if (!files.length) return;
-        releasePlaylist();
-        playlist = files.map((file) => ({
-          name: file.name,
-          url: URL.createObjectURL(file),
-        }));
-        updateVideoControls();
-        loadVideo(0, true);
-      }
-
-      function stopPlayback() {
-        elements.player.pause();
-        elements.player.currentTime = 0;
-      }
-
-      function nextVideo() {
-        loadVideo(currentVideo + 1, true);
-      }
-
-      function render() {
-        elements.todayLabel.textContent = formatDate.format(today);
-        renderTasks();
-        renderLock();
-        renderCalendar();
-        updateVideoControls();
-      }
-
-      elements.readingButton.addEventListener("click", () => completeTask("reading"));
-      elements.englishButton.addEventListener("click", () => completeTask("english"));
-      elements.prevMonth.addEventListener("click", () => {
-        viewMonth -= 1;
-        if (viewMonth < 0) {
-          viewMonth = 11;
-          viewYear -= 1;
-        }
-        renderCalendar();
-      });
-      elements.nextMonth.addEventListener("click", () => {
-        viewMonth += 1;
-        if (viewMonth > 11) {
-          viewMonth = 0;
-          viewYear += 1;
-        }
-        renderCalendar();
-      });
-      elements.videoPicker.addEventListener("change", chooseVideos);
-      elements.stopButton.addEventListener("click", stopPlayback);
-      elements.nextButton.addEventListener("click", nextVideo);
-      elements.player.addEventListener("ended", () => loadVideo(currentVideo + 1, true));
-
-      render();
-    </script>
-  <div id="omikuji-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>★ 今夜のあなたへのメッセージ ★</h2>
-            <p class="modal-sub">3枚の手紙から、直感で1枚選んでみてください</p>
-            
-            <div class="card-container">
-                <div class="card" onclick="flipCard(this)">
-                    <div class="card-front">✉</div>
-                    <div class="card-back"><span class="msg-text"></span></div>
-                </div>
-                <div class="card" onclick="flipCard(this)">
-                    <div class="card-front">✉</div>
-                    <div class="card-back"><span class="msg-text"></span></div>
-                </div>
-                <div class="card" onclick="flipCard(this)">
-                    <div class="card-front">✉</div>
-                    <div class="card-back"><span class="msg-text"></span></div>
-                </div>
-            </div>
-            
-            <button id="close-modal-btn" class="hidden">良い夢を、おやすみなさい ☾</button>
-        </div>
+      </div>
     </div>
-    </body>
-</html>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. 状態管理（カレンダー機能）
+    // ==========================================
+    const todayDate = new Date();
+    let currentYear = todayDate.getFullYear();
+    let currentMonth = todayDate.getMonth(); 
+    let completedDates = {};
+
+    // 10枚の写真ファイル名リスト（p1.jpg 〜 p10.jpg）
+    const totalPhotos = 10;
+    const photoList = [];
+    for(let i = 1; i <= totalPhotos; i++) {
+      photoList.push(`p${i}.jpg`);
+    }
+
+    // 保存されている進捗データの復元
+    if (localStorage.getItem('routineLog')) {
+      completedDates = JSON.parse(localStorage.getItem('routineLog'));
+    }
+
+    // 進捗チェックとランダム写真の抽選
+    function checkProgress() {
+      const englishDone = document.getElementById('task-english').checked;
+      const readingDone = document.getElementById('task-reading').checked;
+      
+      const stamp1 = document.getElementById('stamp1');
+      const stamp2 = document.getElementById('stamp2');
+      const lockOverlay = document.getElementById('lockOverlay');
+
+      const today = new Date();
+      const dateKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+      // 左側のクマちゃんスタンプのアニメーション制御
+      if (englishDone) stamp1.classList.add('active');
+      else stamp1.classList.remove('active');
+
+      if (readingDone) stamp2.classList.add('active');
+      else stamp2.classList.remove('active');
+
+      // 両方クリアした時の処理
+      if (englishDone && readingDone) {
+        lockOverlay.classList.add('unlocked');
+        
+        // 今日の写真がまだ決まっていなければ、ランダムで1枚引く
+        if (!completedDates[dateKey]) {
+          const randomIndex = Math.floor(Math.random() * photoList.length);
+          const drawnPhoto = photoList[randomIndex];
+          completedDates[dateKey] = drawnPhoto; // 引いた写真を記憶
+        }
+      } else {
+        // チェックが外れた時の処理
+        lockOverlay.classList.remove('unlocked');
+        document.getElementById('videoPlayer').pause();
+        
+        if (completedDates[dateKey]) {
+          delete completedDates[dateKey]; // カレンダーの写真を消去
+        }
+      }
+
+      // ブラウザに状態を保存してカレンダーを更新
+      localStorage.setItem('routineLog', JSON.stringify(completedDates));
+      renderCalendar();
+    }
+
+    // カレンダーの描画
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const title = document.getElementById('calendarTitle');
+      grid.innerHTML = '';
+
+      title.innerText = `${currentYear}年 ${currentMonth + 1}月`;
+
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      weekdays.forEach(w => {
+        const div = document.createElement('div');
+        div.className = 'weekday';
+        div.innerText = w;
+        grid.appendChild(div);
+      });
+
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const today = new Date();
+
+      // 空白マスを埋める
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        grid.appendChild(empty);
+      }
+
+      // 日付マスの生成
+      for (let day = 1; day <= totalDays; day++) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'day';
+        dayDiv.innerText = day;
+
+        // 今日の日付をハイライト
+        if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && day === today.getDate()) {
+          dayDiv.classList.add('today');
+        }
+
+        const dateKey = `${currentYear}-${currentMonth}-${day}`;
+        const savedPhoto = completedDates[dateKey];
+        
+        // その日に保存された写真があれば表示する
+        if (savedPhoto) {
+          // 過去のデータが古い仕様（true）で残っている場合はクマ画像を出す
+          if (savedPhoto === true) {
+            dayDiv.style.backgroundImage = `url('mascot-tam-walk2504.png')`;
+          } else {
+            // 当選したランダム写真を表示
+            dayDiv.style.backgroundImage = `url('${savedPhoto}')`;
+          }
+          dayDiv.style.color = 'transparent'; // 日付の数字を隠して写真を主役に
+        }
+
+        grid.appendChild(dayDiv);
+      }
+    }
+
+    function prevMonth() {
+      currentMonth--;
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+      renderCalendar();
+    }
+
+    function nextMonth() {
+      currentMonth++;
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      renderCalendar();
+    }
+
+    renderCalendar();
+
+    // ==========================================
+    // 2. 動画プレイヤー・ロジック
+    // ==========================================
+    const fileInput = document.getElementById('fileInput');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const currentTitle = document.getElementById('currentTitle');
+    const loopBtn = document.getElementById('loopBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    let videoFiles = [];
+    let currentIndex = 0;
+    let isLoopAll = false;
+
+    fileInput.addEventListener('change', function(e) {
+      if (this.files && this.files.length > 0) {
+        videoFiles = Array.from(this.files);
+        currentIndex = 0;
+        playVideo(currentIndex);
+      }
+    });
+
+    function playVideo(index) {
+      if (videoFiles.length === 0 || index < 0 || index >= videoFiles.length) return;
+      currentIndex = index;
+      const file = videoFiles[currentIndex];
+      if (videoPlayer.src) URL.revokeObjectURL(videoPlayer.src);
+      videoPlayer.src = URL.createObjectURL(file);
+      currentTitle.innerText = `再生中 🎬 (${currentIndex + 1}/${videoFiles.length}): ${file.name}`;
+      videoPlayer.play().catch(err => {
+        console.log("自動再生ブロック待ち:", err);
+      });
+    }
+
+    function nextVideo() {
+      if (videoFiles.length === 0) return;
+      if (currentIndex + 1 < videoFiles.length) {
+        playVideo(currentIndex + 1);
+      } else if (isLoopAll) {
+        playVideo(0);
+      } else {
+        currentTitle.innerText = "すべての動画の再生が終了しました 🌟";
+      }
+    }
+
+    function prevVideo() {
+      if (videoFiles.length === 0) return;
+      if (currentIndex - 1 >= 0) {
+        playVideo(currentIndex - 1);
+      } else if (isLoopAll) {
+        playVideo(videoFiles.length - 1);
+      }
+    }
+
+    videoPlayer.addEventListener('ended', nextVideo);
+    prevBtn.addEventListener('click', prevVideo);
+    nextBtn.addEventListener('click', nextVideo);
+
+    loopBtn.addEventListener('click', () => {
+      isLoopAll = !isLoopAll;
+      loopBtn.innerText = isLoopAll ? "全曲リピート ON" : "全曲リピート OFF";
+      loopBtn.classList.toggle('active', isLoopAll);
+    });
+  </script>
 </body>
 </html>
