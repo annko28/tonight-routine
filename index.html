@@ -44,7 +44,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 15px;
+      margin-bottom: 5px;
     }
 
     .routine-bear {
@@ -61,38 +61,45 @@
       font-weight: 600;
     }
 
-    /* タスクリスト */
-    .task-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    /* 今日の気分（ムード）選択エリア */
+    .mood-selector {
+      background-color: var(--item-bg);
+      padding: 20px 15px;
+      border-radius: 10px;
+      text-align: center;
     }
 
-    .task-item {
+    .mood-prompt {
+      margin: 0 0 15px 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .mood-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .mood-btn {
+      background-color: #333333;
+      border: 2px solid transparent;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 1.8rem;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      background-color: var(--item-bg);
-      padding: 14px 15px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background 0.2s;
+      justify-content: center;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      padding: 0;
     }
 
-    .task-item:hover {
-      background-color: #323232;
-    }
-
-    .task-item input[type="checkbox"] {
-      margin-right: 15px;
-      width: 20px;
-      height: 20px;
-      accent-color: var(--main-color);
-      cursor: pointer;
-    }
-
-    .task-text {
-      font-size: 0.95rem;
-      font-weight: 500;
+    .mood-btn:hover {
+      transform: scale(1.1);
+      background-color: #444444;
     }
 
     /* カレンダーカード */
@@ -148,12 +155,25 @@
       font-weight: 500;
       background-size: cover;
       background-position: center;
+      transition: all 0.3s ease;
     }
 
     .day.today {
       border: 1px solid var(--main-color);
       color: var(--main-color);
       font-weight: 700;
+    }
+
+    /* ポンッと出現するアニメーション用 */
+    @keyframes popIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .day.stamped {
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      color: transparent;
     }
 
     /* 右側：メインコンテンツ */
@@ -212,7 +232,7 @@
       align-items: center;
       justify-content: center;
       z-index: 10;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.8s ease;
       padding: 20px;
       box-sizing: border-box;
     }
@@ -224,15 +244,17 @@
 
     .lock-message {
       text-align: center;
-      font-size: 0.95rem;
+      font-size: 1rem;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.6;
+      transition: all 0.3s ease;
     }
 
     .lock-icon {
-      font-size: 2.2rem;
-      margin-bottom: 10px;
+      font-size: 2.5rem;
+      margin-bottom: 15px;
       color: var(--main-color);
+      transition: all 0.3s ease;
     }
 
     /* コントロール群 */
@@ -311,24 +333,27 @@
 </head>
 <body>
 
+  <!-- 左側：サイドバー -->
   <div class="sidebar">
     <div>
+      <!-- クマ画像をタイトルの前に配置 -->
       <div class="routine-header">
         <img src="mascot-tam-walk2504.png" alt="Bear" class="routine-bear">
         <h2>TONIGHT'S ROUTINE</h2>
       </div>
-      <div class="task-list">
-        <label class="task-item">
-          <input type="checkbox" id="task-english" onchange="checkProgress()">
-          <span class="task-text">📚 夜の英語学習</span>
-        </label>
-        <label class="task-item">
-          <input type="checkbox" id="task-reading" onchange="checkProgress()">
-          <span class="task-text">📖 読書タイム</span>
-        </label>
+      
+      <!-- 気分選択エリア -->
+      <div class="mood-selector">
+        <p class="mood-prompt" id="moodPrompt">今の気分を教えてください</p>
+        <div class="mood-buttons" id="moodButtons">
+          <button class="mood-btn" onclick="unlockTheater('😆')">😆</button>
+          <button class="mood-btn" onclick="unlockTheater('😌')">😌</button>
+          <button class="mood-btn" onclick="unlockTheater('🫠')">🫠</button>
+        </div>
       </div>
     </div>
 
+    <!-- カレンダーカード -->
     <div class="calendar-card">
       <div class="calendar-header">
         <button onclick="prevMonth()">◀</button>
@@ -339,16 +364,17 @@
     </div>
   </div>
 
+  <!-- 右側：メインコンテンツ -->
   <div class="main-content">
     <div class="player-container">
       <div id="currentTitle">動画を選択してください</div>
       
       <div class="video-wrapper">
         <div class="lock-overlay" id="lockOverlay">
-          <div class="lock-icon">🔒</div>
-          <div class="lock-message">
-            夜のルーティンを完了すると<br>
-            シアタールームが解放されます！✨
+          <div class="lock-icon" id="lockIcon">🔒</div>
+          <div class="lock-message" id="lockMessage">
+            今日の気分を選ぶと<br>
+            シアタールームが解放されます
           </div>
         </div>
         <video id="videoPlayer" controls></video>
@@ -372,7 +398,7 @@
 
   <script>
     // ==========================================
-    // 1. 状態管理（カレンダー機能）
+    // 1. 状態管理（カレンダー・ロック解除）
     // ==========================================
     const todayDate = new Date();
     let currentYear = todayDate.getFullYear();
@@ -391,38 +417,49 @@
       completedDates = JSON.parse(localStorage.getItem('routineLog'));
     }
 
-    // 進捗チェックとランダム写真の抽選
-    function checkProgress() {
-      const englishDone = document.getElementById('task-english').checked;
-      const readingDone = document.getElementById('task-reading').checked;
-      const lockOverlay = document.getElementById('lockOverlay');
-
+    // 気分を選んでロック解除＆写真出現させる関数
+    function unlockTheater(moodEmoji) {
       const today = new Date();
       const dateKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+      
+      const lockOverlay = document.getElementById('lockOverlay');
+      const lockIcon = document.getElementById('lockIcon');
+      const lockMessage = document.getElementById('lockMessage');
+      const moodPrompt = document.getElementById('moodPrompt');
+      const moodButtons = document.getElementById('moodButtons');
 
-      // 両方クリアした時の処理
-      if (englishDone && readingDone) {
-        lockOverlay.classList.add('unlocked');
-        
-        // 今日の写真がまだ決まっていなければ、ランダムで1枚引く
-        if (!completedDates[dateKey]) {
-          const randomIndex = Math.floor(Math.random() * photoList.length);
-          const drawnPhoto = photoList[randomIndex];
-          completedDates[dateKey] = drawnPhoto; 
-        }
-      } else {
-        // チェックが外れた時の処理
-        lockOverlay.classList.remove('unlocked');
-        document.getElementById('videoPlayer').pause();
-        
-        // 当日の記録を消去
-        if (completedDates[dateKey]) {
-          delete completedDates[dateKey]; 
-        }
+      // 今日の写真がまだ決まっていなければランダムで1枚引いて保存
+      if (!completedDates[dateKey]) {
+        const randomIndex = Math.floor(Math.random() * photoList.length);
+        completedDates[dateKey] = photoList[randomIndex];
+        localStorage.setItem('routineLog', JSON.stringify(completedDates));
       }
 
-      localStorage.setItem('routineLog', JSON.stringify(completedDates));
+      // カレンダーを更新（写真がポンッと出る）
       renderCalendar();
+
+      // サイドバーのUI変化
+      moodPrompt.innerText = "今日もお疲れ様でした！";
+      moodButtons.style.pointerEvents = 'none'; // 連打防止
+      moodButtons.style.opacity = '0.5';
+
+      // ロック解除のアニメーション演出
+      lockIcon.innerText = '🔓';
+      
+      if (moodEmoji === '😆') {
+        lockMessage.innerHTML = 'いい一日でしたね！<br>さあ、楽しい時間の始まりです✨';
+      } else if (moodEmoji === '😌') {
+        lockMessage.innerHTML = 'ゆっくり深呼吸。<br>リラックスしてお楽しみください☕️';
+      } else if (moodEmoji === '🫠') {
+        lockMessage.innerHTML = '今日はいっぱい頑張りましたね。<br>頭を空っぽにして癒やされてください🌿';
+      } else {
+        lockMessage.innerHTML = '今日もお疲れ様でした。<br>ゆっくりお楽しみください✨';
+      }
+
+      // メッセージを読ませるために1秒ちょっと待ってからフェードアウト
+      setTimeout(() => {
+        lockOverlay.classList.add('unlocked');
+      }, 1500);
     }
 
     // カレンダーの描画
@@ -444,6 +481,7 @@
       const firstDay = new Date(currentYear, currentMonth, 1).getDay();
       const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
       const today = new Date();
+      const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
 
       for (let i = 0; i < firstDay; i++) {
         const empty = document.createElement('div');
@@ -455,23 +493,21 @@
         dayDiv.className = 'day';
         dayDiv.innerText = day;
 
+        const dateKey = `${currentYear}-${currentMonth}-${day}`;
+        const savedPhoto = completedDates[dateKey];
+        
         if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && day === today.getDate()) {
           dayDiv.classList.add('today');
         }
 
-        const dateKey = `${currentYear}-${currentMonth}-${day}`;
-        const savedPhoto = completedDates[dateKey];
-        
         // その日に保存された写真があれば表示する
         if (savedPhoto) {
-          // 過去のテストデータ（クマ画像）が残っていた場合の安全策（p1.jpgを表示）
           if (savedPhoto === true || savedPhoto.includes('stamp-bear')) {
             dayDiv.style.backgroundImage = `url('p1.jpg')`;
           } else {
-            // 当選した1〜10のランダム写真を表示
             dayDiv.style.backgroundImage = `url('${savedPhoto}')`;
           }
-          dayDiv.style.color = 'transparent'; 
+          dayDiv.classList.add('stamped'); // 出現アニメーション用クラス
         }
 
         grid.appendChild(dayDiv);
@@ -490,7 +526,20 @@
       renderCalendar();
     }
 
-    renderCalendar();
+    // 初期化：もし今日すでに解除済みなら、最初からロックを外しておく
+    function checkTodayStatus() {
+      const today = new Date();
+      const dateKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+      if (completedDates[dateKey]) {
+        document.getElementById('lockOverlay').classList.add('unlocked');
+        document.getElementById('moodPrompt').innerText = "今日もごゆっくりどうぞ☕️";
+        document.getElementById('moodButtons').style.pointerEvents = 'none';
+        document.getElementById('moodButtons').style.opacity = '0.5';
+      }
+      renderCalendar();
+    }
+
+    checkTodayStatus();
 
     // ==========================================
     // 2. 動画プレイヤー・ロジック
